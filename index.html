@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+    <head>
+        <style>
+            body {
+                text-align: center;
+            }
+            #speed {
+                width: 50px;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="canvas"></canvas>
+        <input id="speed" type="number" placeholder="Snelheid instellen" value="20" onchange="start()">
+        <button onclick="start()" style="margin-left: 10px">Start</button>
+        <button onclick="stop()">Stop</button>
+        <button onclick="main()">Een stapje</button>
+        <button onclick="terug()">Terug</button>
+        <button onclick="grid.cellStates.selected = 'Conductor'" style="margin-left: 100px">Conductor</button>
+        <button onclick="grid.cellStates.selected = 'ElectronTail'">Electron Tail</button>
+        <button onclick="grid.cellStates.selected = 'ElectronHead'">Electron Head</button>
+        <script src="grid_v1.5.js"></script>
+        <script>
+        grid.color = "rgb(237,237,237)";
+        grid.addCellState("Conductor", ["color"], ["#FFD700"]);
+        grid.addCellState("ElectronTail", ["color"], ["#FF4000"]);
+        grid.addCellState("ElectronHead", ["color"], ["#0080FF"]);
+        grid.update();
+            
+        function start(ms) {
+            stop();
+            interval = setInterval(function() {
+                main();
+            }, speed.value);
+        }
+            
+        function stop() {
+            if(typeof interval != "undefined") {
+                clearInterval(interval);
+            }
+        }
+            
+        function saveState() {
+            if(grid.cells.length == 0) {
+                prevGen.push(new Array);
+            } else {
+                prevGen.push(grid.cells.slice(0));
+            }
+        }
+            
+        function terug() {
+            if(prevGen.length > 0) {
+                grid.cells = prevGen[prevGen.length - 1];
+                prevGen = prevGen.slice(0,prevGen.length - 1);
+                grid.update();
+            }
+        }
+            
+        function main() {
+            var newElectronHeads = [];
+            for(var i = 0; i < grid.cells.length; i++) {
+                if(grid.cells[i].cellState == "ElectronHead") {
+                    for(var rad = 0; rad < 2 * Math.PI; rad += .25 * Math.PI) {
+                        var x = grid.cells[i].x + Math.round(Math.sin(rad)),
+                            y = grid.cells[i].y + Math.round(Math.cos(rad));
+                        if(grid.findCell(x,y) != -1) {
+                            
+                            if(grid.cells[grid.findCell(x,y)].cellState == "Conductor" && grid.countNeighbors(x,y,"ElectronHead") < 3) {
+                                newElectronHeads.push({x: x, y: y});
+                            }
+                        }
+                    }
+                }
+            }
+            
+            
+            for(var i = 0; i < grid.cells.length; i++) {
+                if(grid.cells[i].cellState == "ElectronHead") {
+                    grid.createCell(grid.cells[i].x, grid.cells[i].y, "ElectronTail");
+                } else if(grid.cells[i].cellState == "ElectronTail") {
+                    grid.createCell(grid.cells[i].x, grid.cells[i].y, "Conductor");
+                }
+            }
+            
+            for(var i = 0; i < newElectronHeads.length; i++) {
+                grid.createCell(newElectronHeads[i].x, newElectronHeads[i].y, "ElectronHead");
+            }
+        }
+        </script>
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+                        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+                    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+            ga('create', 'UA-63707482-2', 'auto');
+            ga('send', 'pageview');
+
+        </script>
+    </body>
+</html>
